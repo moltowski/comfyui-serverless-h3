@@ -1,0 +1,12 @@
+# Les modeles H3 vivent sur le network volume c-edge.
+# En serverless le volume se monte sur /runpod-volume (sur le pod c'est /workspace).
+# worker-comfyui auto-detecte deja le volume ; ceci est explicite + belt-and-suspenders.
+comfyui_h3:
+  base_path: /runpod-volume/ComfyUI/
+  is_default: true
+  checkpoints: models/checkpoints
+  diffusion_models: models/diffusion_models
+  text_encoders: models/text_encoders
+  clip: models/clip
+  vae: models/vae
+  loras: models/loras
