@@ -36,7 +36,13 @@ def gql(q, variables=None):
     body = json.dumps({"query": q, "variables": variables or {}}).encode()
     req = urllib.request.Request(
         "https://api.runpod.io/graphql?api_key=" + key,
-        data=body, headers={"Content-Type": "application/json"})
+        data=body, headers={
+            "Content-Type": "application/json",
+            # L'edge RunPod renvoie 403 sur le UA par defaut de urllib ("Python-urllib").
+            # Toujours un UA navigateur (gotcha vault : cf. now.md 2026-08-07).
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        })
     with urllib.request.urlopen(req, timeout=45) as r:
         out = json.load(r)
     if out.get("errors"):
@@ -63,6 +69,7 @@ def create_template():
         "imageName": IMAGE,
         "dockerArgs": "",
         "containerDiskInGb": 20,
+        "volumeInGb": 0,          # serverless : les modeles viennent du network volume, pas d'un volume de template
         "volumeMountPath": "/workspace",
         "isServerless": True,
         "env": [
