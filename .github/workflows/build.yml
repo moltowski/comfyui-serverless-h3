@@ -2,6 +2,12 @@ name: build
 on:
   push:
     branches: [main]
+    # Ne rebuild QUE si l'image change. Docs/scripts d'ops ne declenchent rien.
+    paths-ignore:
+      - '**.md'
+      - 'smoketest/**'
+      - 'apply_endpoints.py'
+      - '.gitignore'
   workflow_dispatch: {}
 
 jobs:

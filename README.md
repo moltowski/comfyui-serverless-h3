@@ -1,5 +1,21 @@
 # comfyui-serverless-h3
 
+> **Statut 2026-08-15 : LIVE + validé bout-en-bout.** Endpoint `585v8zf3b3ihvt`
+> (`minimax-h3-serverless`) → image `ghcr.io/moltowski/comfyui-serverless-h3:latest`
+> (template `dfg9p4xxv9`), GPU RTX PRO 6000 Blackwell, volume c-edge, idle 5s, wmax 3.
+> Smoketest t2v+audio OK : mp4 h264 384×672 3,04s + aac 32kHz stéréo. Mesures : cold-load
+> `delayTime` ~58 s (avec standby, pas un vrai froid), `executionTime` ~118 s (3s@384×672, 10 steps).
+>
+> ⭐ **Piège résolu (1er build KO = "Missing custom node: MiniMax H3 Image to Video")** : le node
+> H3 est NATIF à ComfyUI 0.30.0 (`comfy_extras/nodes_minimax_h3.py`) mais plantait à l'import.
+> Fix = **`uv pip` (pas `pip`** : le base a 2 venvs, comfy-cli `/comfyui/.venv` vs runtime `/opt/venv`)
+> + **base `5.8.6-base`** + **`torchaudio`** explicite (importé par le node). Cf. Dockerfile.
+>
+> ⚠️ **API RunPod** : `apply_endpoints.py` (GraphQL) fait krea 3→2 + crée la template, mais
+> **GraphQL `saveEndpoint` ignore `templateId`** → le repoint de l'endpoint se fait via **REST v1**
+> (`PATCH https://rest.runpod.io/v1/endpoints/{id}` Bearer, clé `rpa_...`). Refresh d'image =
+> bump env du template (nouveau release) pour recycler les workers standby.
+
 Worker serverless RunPod pour **MiniMax H3** (Hailuo 3.0) — video T2V / I2V / R2V + audio natif.
 
 Inspire de `comfyui-serverless-krea`, meme architecture : handler officiel
@@ -73,10 +89,13 @@ exporter en **format API** avant de les envoyer ici, et y porter le cablage "tur
 (DiffusionModelLoaderKJ + MiniMaxH3TurboLoRA + SigmaShift + TurboSampler) — cf.
 `wiki/minimax-h3-turbo-sage.md`.
 
-## A faire (ouvert)
+## Etat (2026-08-15)
 
-- [ ] 1er build CI + verif Blackwell/torch
-- [ ] Exporter les 3 workflows en format API
-- [ ] Mesurer le **cold-load H3** (taxe de reveil reelle) -> ferme le chiffrage cout serverless H3
-- [ ] Cle full-rights (ou console) pour appliquer les endpoints
-- [ ] Mesurer pic VRAM H3 -> confirmer le tier GPU (48 Go suffit ? sinon 96 Go)
+- [x] 1er build CI + verif Blackwell/torch (base 5.8.6 cu128, OK sur RTX PRO 6000)
+- [x] Workflows en format API (ils l'etaient deja ; smoketest fixture core-only ajoute)
+- [x] Cle full-rights -> endpoints appliques (krea 3->2, template H3, comfygen repointe via REST v1)
+- [x] 1er cold-load mesure : delayTime ~58 s (AVEC standby, donc pas un vrai froid)
+- [ ] **Vrai cold-load** scale-from-zero (met workersMin/standby a 0, attend le drain, puis 1 job) -> ferme le chiffrage
+- [ ] **Pic VRAM** a la reso prod (~1,2 MP) -> confirme le tier GPU (48 vs 96)
+- [ ] Cabler le **turbo propre** (DiffusionModelLoaderKJ + MiniMaxH3TurboLoRA + SigmaShift + TurboSampler)
+- [ ] Brancher l'endpoint dans l'agent (`COMFY_VIDEO_URL` = serverless au lieu d'un pod)
