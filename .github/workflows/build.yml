@@ -1,7 +1,7 @@
 name: build
 on:
   push:
-    branches: [main]
+    branches: [main, comfyui-0.45]   # comfyui-0.45 : build de test, tag :comfyui-0.45 (pas :latest)
     # Ne rebuild QUE si l'image change. Docs/scripts d'ops ne declenchent rien.
     paths-ignore:
       - '**.md'
@@ -39,7 +39,11 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/moltowski/comfyui-serverless-h3:latest
+          # :latest UNIQUEMENT depuis main ; une autre branche sort en :<branche> (+ :<sha>),
+          # pour tester une image sans toucher l'endpoint en service.
+          tags: |
+            ghcr.io/moltowski/comfyui-serverless-h3:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+            ghcr.io/moltowski/comfyui-serverless-h3:${{ github.sha }}
           # mode=min (pas max) : max exporte toutes les couches intermediaires et sature le cache.
           cache-from: type=gha
           cache-to: type=gha,mode=min
